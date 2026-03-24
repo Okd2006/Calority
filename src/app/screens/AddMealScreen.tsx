@@ -1,7 +1,7 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { Camera, Upload, Trash2, CheckCircle2 } from 'lucide-react';
-import { getGoals, pct, summaryLabel } from '../utils/goals';
+import { getGoals, pct, summaryLabel, type Goals } from '../utils/goals';
 import { saveMeal } from '../utils/history';
 import { resizeImage } from '../utils/imageUtils';
 
@@ -25,26 +25,19 @@ export function AddMealScreen() {
 
   const [items, setItems] = useState<MealItem[]>(initialItems);
   const [scanning, setScanning] = useState(false);
-  const [scanningName, setScanningName] = useState('');
   const [saved, setSaved] = useState(false);
+  const [goals, setGoals] = useState<Goals>({ calories: 2000, protein: 150, carbs: 250, fat: 65 });
   const cameraRef = useRef<HTMLInputElement>(null);
   const uploadRef = useRef<HTMLInputElement>(null);
-  const goals = getGoals();
 
-  const handleSaveAll = () => {
+  useEffect(() => { getGoals().then(setGoals); }, []);
+
+  const handleSaveAll = async () => {
     if (items.length === 0) return;
-    // Save each item individually to history
-    items.forEach(item => {
-      saveMeal({
-        name: item.name,
-        calories: item.calories,
-        protein: item.protein,
-        carbs: item.carbs,
-        fat: item.fat,
-        ingredients: item.ingredients,
-        imageDataUrl: item.imageDataUrl,
-      });
-    });
+    await Promise.all(items.map(item => saveMeal({
+      name: item.name, calories: item.calories, protein: item.protein,
+      carbs: item.carbs, fat: item.fat, ingredients: item.ingredients, imageDataUrl: item.imageDataUrl,
+    })));
     setSaved(true);
     setTimeout(() => navigate('/history'), 800);
   };

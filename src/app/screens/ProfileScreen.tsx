@@ -1,18 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Settings, Target, TrendingUp } from 'lucide-react';
 import { BottomNav } from '../components/BottomNav';
 import { getGoals, saveGoals } from '../utils/goals';
 
 export function ProfileScreen() {
-  const stored = getGoals();
-  const [calorieGoal, setCalorieGoal] = useState(stored.calories);
-  const [proteinGoal, setProteinGoal] = useState(stored.protein);
-  const [carbsGoal, setCarbsGoal] = useState(stored.carbs);
-  const [fatGoal, setFatGoal] = useState(stored.fat);
+  const [calorieGoal, setCalorieGoal] = useState(2000);
+  const [proteinGoal, setProteinGoal] = useState(150);
+  const [carbsGoal, setCarbsGoal] = useState(250);
+  const [fatGoal, setFatGoal] = useState(65);
+
+  useEffect(() => {
+    getGoals().then(g => {
+      setCalorieGoal(g.calories);
+      setProteinGoal(g.protein);
+      setCarbsGoal(g.carbs);
+      setFatGoal(g.fat);
+    });
+  }, []);
   const [weightGoal, setWeightGoal] = useState(70);
 
-  const handleSave = () => {
-    saveGoals({ calories: calorieGoal, protein: proteinGoal, carbs: carbsGoal, fat: fatGoal });
+  const handleSave = async () => {
+    await saveGoals({ calories: calorieGoal, protein: proteinGoal, carbs: carbsGoal, fat: fatGoal });
     alert('Goals saved!');
   };
   

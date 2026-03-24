@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, AlertCircle, Plus, Pencil, Check, X, CheckCircle2 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
-import { getGoals, pct, summaryLabel } from '../utils/goals';
+import { getGoals, pct, summaryLabel, type Goals } from '../utils/goals';
 import { saveMeal } from '../utils/history';
 
 function EditableNumber({
@@ -48,7 +48,9 @@ export function ResultScreen() {
   const navigate = useNavigate();
   const location = useLocation();
   const { mealData, imageDataUrl, error } = (location.state as any) ?? {};
-  const goals = getGoals();
+  const [goals, setGoals] = useState<Goals>({ calories: 2000, protein: 150, carbs: 250, fat: 65 });
+
+  useEffect(() => { getGoals().then(setGoals); }, []);
 
   const [name, setName] = useState(mealData?.name ?? '');
   const [editingName, setEditingName] = useState(false);
@@ -66,8 +68,8 @@ export function ResultScreen() {
   const confidenceNote: string = mealData?.confidenceNote ?? '';
   const [saved, setSaved] = useState(false);
 
-  const handleSave = () => {
-    saveMeal({ name, calories, protein, carbs, fat, ingredients, imageDataUrl });
+  const handleSave = async () => {
+    await saveMeal({ name, calories, protein, carbs, fat, ingredients, imageDataUrl });
     setSaved(true);
     setTimeout(() => navigate('/history'), 800);
   };

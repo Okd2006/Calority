@@ -1,17 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Trash2, UtensilsCrossed } from 'lucide-react';
 import { BottomNav } from '../components/BottomNav';
 import { getHistory, deleteMeal, groupByDate, formatTime, type HistoryEntry } from '../utils/history';
 import { getGoals, pct } from '../utils/goals';
+import type { Goals } from '../utils/goals';
 
 export function HistoryScreen() {
-  const [entries, setEntries] = useState<HistoryEntry[]>(getHistory);
-  const goals = getGoals();
+  const [entries, setEntries] = useState<HistoryEntry[]>([]);
+  const [goals, setGoals] = useState<Goals>({ calories: 2000, protein: 150, carbs: 250, fat: 65 });
+
+  useEffect(() => {
+    getHistory().then(setEntries);
+    getGoals().then(setGoals);
+  }, []);
+
   const groups = groupByDate(entries);
 
-  const handleDelete = (id: string) => {
-    deleteMeal(id);
-    setEntries(getHistory());
+  const handleDelete = async (id: string) => {
+    await deleteMeal(id);
+    setEntries(prev => prev.filter(e => e.id !== id));
   };
 
   // Daily totals for a group
