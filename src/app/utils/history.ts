@@ -12,9 +12,7 @@ export interface HistoryEntry {
   savedAt: string;
 }
 
-// ── Local cache key (offline fallback) ──────────────────────────────────────
 const CACHE_KEY = 'calority_history';
-
 function getCache(): HistoryEntry[] {
   try { return JSON.parse(localStorage.getItem(CACHE_KEY) ?? '[]'); } catch { return []; }
 }
@@ -22,12 +20,19 @@ function setCache(entries: HistoryEntry[]) {
   localStorage.setItem(CACHE_KEY, JSON.stringify(entries));
 }
 
-// ── Supabase helpers ─────────────────────────────────────────────────────────
+async function getUserId(): Promise<string | null> {
+  const { data } = await supabase.auth.getUser();
+  return data.user?.id ?? null;
+}
 
 export async function getHistory(): Promise<HistoryEntry[]> {
+  const userId = await getUserId();
+  if (!userId) return getCache();
+
   const { data, error } = await supabase
     .from('meals')
     .select('*')
+    .eq('user_id', userId)
     .order('saved_at', { ascending: false });
 
   if (error || !data) return getCache();
@@ -50,10 +55,25 @@ export async function getHistory(): Promise<HistoryEntry[]> {
 
 export async function saveMeal(entry: Omit<HistoryEntry, 'id' | 'savedAt'>): Promise<HistoryEntry> {
   const savedAt = new Date().toISOString();
+  const userId = await getUserId();
 
-  const { data, error } = await supabase
+  const newEntry: HistoryEntry = {
+    id: `${Date.now()}`,
+    ...entry,
+    savedAt,
+  };
+
+  if (!userId) {
+    const cache = getCache();
+    cache.unshift(newEntry);
+    setCache(cache);
+    return newEntry;
+  }
+
+  const { data } = await supabase
     .from('meals')
     .insert({
+      user_id: userId,
       name: entry.name,
       calories: entry.calories,
       protein: entry.protein,
@@ -66,34 +86,13 @@ export async function saveMeal(entry: Omit<HistoryEntry, 'id' | 'savedAt'>): Pro
     .select()
     .single();
 
-  const newEntry: HistoryEntry = {
-    id: data?.id ?? `${Date.now()}`,
-    name: entry.name,
-    calories: entry.calories,
-    protein: entry.protein,
-    carbs: entry.carbs,
-    fat: entry.fat,
-    ingredients: entry.ingredients,
-    imageDataUrl: entry.imageDataUrl,
-    savedAt,
-  };
-
-  if (error) {
-    // fallback: save to localStorage only
-    const cache = getCache();
-    cache.unshift(newEntry);
-    setCache(cache);
-  }
-
-  return newEntry;
+  return { ...newEntry, id: data?.id ?? newEntry.id };
 }
 
 export async function deleteMeal(id: string) {
   await supabase.from('meals').delete().eq('id', id);
   setCache(getCache().filter(e => e.id !== id));
 }
-
-// ── Date helpers (unchanged) ─────────────────────────────────────────────────
 
 export function formatDate(iso: string): string {
   const date = new Date(iso);

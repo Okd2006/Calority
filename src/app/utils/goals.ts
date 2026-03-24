@@ -20,14 +20,19 @@ function setCache(goals: Goals) {
   localStorage.setItem(CACHE_KEY, JSON.stringify(goals));
 }
 
-// Use a fixed row id so there's always one goals row per "user" (anonymous)
-const GOALS_ROW_ID = 'default';
+async function getUserId(): Promise<string | null> {
+  const { data } = await supabase.auth.getUser();
+  return data.user?.id ?? null;
+}
 
 export async function getGoals(): Promise<Goals> {
+  const userId = await getUserId();
+  if (!userId) return getCache();
+
   const { data, error } = await supabase
     .from('goals')
     .select('*')
-    .eq('id', GOALS_ROW_ID)
+    .eq('user_id', userId)
     .single();
 
   if (error || !data) return getCache();
@@ -47,16 +52,17 @@ export async function saveGoals(goals: Partial<Goals>) {
   const merged = { ...current, ...goals };
   setCache(merged);
 
+  const userId = await getUserId();
+  if (!userId) return;
+
   await supabase.from('goals').upsert({
-    id: GOALS_ROW_ID,
+    user_id: userId,
     calories: merged.calories,
     protein: merged.protein,
     carbs: merged.carbs,
     fat: merged.fat,
   });
 }
-
-// ── Sync helpers (unchanged) ─────────────────────────────────────────────────
 
 export function pct(value: number, goal: number) {
   return Math.min(Math.round((value / goal) * 100), 100);

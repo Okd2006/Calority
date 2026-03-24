@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Settings, Target, TrendingUp } from 'lucide-react';
+import { Settings, Target, TrendingUp, LogOut } from 'lucide-react';
 import { BottomNav } from '../components/BottomNav';
 import { getGoals, saveGoals } from '../utils/goals';
+import { useAuth } from '../utils/auth';
 
 export function ProfileScreen() {
+  const { user, signOut } = useAuth();
   const [calorieGoal, setCalorieGoal] = useState(2000);
   const [proteinGoal, setProteinGoal] = useState(150);
   const [carbsGoal, setCarbsGoal] = useState(250);
@@ -29,21 +31,17 @@ export function ProfileScreen() {
       {/* Header */}
       <div className="pt-safe px-6 pb-6 border-b border-gray-100 flex items-center justify-between">
         <div>
-          <h1 
-            className="text-3xl tracking-tight"
-            style={{ 
-              fontWeight: 600,
-              color: '#1F2937'
-            }}
-          >
-            Profile
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Manage your goals
-          </p>
+          <h1 className="text-3xl tracking-tight" style={{ fontWeight: 600, color: '#1F2937' }}>Profile</h1>
+          {user && (
+            <p className="text-sm text-gray-500 mt-1 truncate max-w-[220px]">{user.email}</p>
+          )}
         </div>
-        <button className="p-3 hover:bg-gray-100 rounded-full transition-colors">
-          <Settings className="w-6 h-6 text-gray-600" />
+        <button
+          onClick={signOut}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-gray-200 text-sm text-gray-500 active:bg-gray-100"
+        >
+          <LogOut className="w-4 h-4" />
+          Sign out
         </button>
       </div>
       
