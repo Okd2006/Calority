@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.example.calority",
+      "sha256_cert_fingerprints": [
+        "42:77:AE:29:F7:C9:21:1F:EB:2A:91:5C:D1:BF:5F:C2:D9:FF:39:65:D6:B3:53:6D:11:90:76:45:B1:AE:9D:B2"
+      ]
+    }
+  }
+]
