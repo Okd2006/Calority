@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin + '/home' },
+      options: { redirectTo: 'https://calority.vercel.app/auth/callback' },
     });
   };
 

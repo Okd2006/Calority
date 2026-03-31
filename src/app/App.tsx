@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router';
 import { AuthProvider, useAuth } from './utils/auth';
 import { SplashScreen } from './screens/SplashScreen';
 import { LoginScreen } from './screens/LoginScreen';
@@ -9,6 +9,24 @@ import { HistoryScreen } from './screens/HistoryScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
 import { AddMealScreen } from './screens/AddMealScreen';
 import type { ReactNode } from 'react';
+import { useEffect } from 'react';
+
+function AuthCallback() {
+  const navigate = useNavigate();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading) {
+      navigate(user ? '/home' : '/login', { replace: true });
+    }
+  }, [user, loading, navigate]);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="w-10 h-10 rounded-full border-4 border-green-200 border-t-green-500 animate-spin" />
+    </div>
+  );
+}
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { user, loading, isGuest } = useAuth();
@@ -25,6 +43,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={<SplashScreen />} />
       <Route path="/login" element={<LoginScreen />} />
+      <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/home" element={<ProtectedRoute><HomeScreen /></ProtectedRoute>} />
       <Route path="/scan" element={<ProtectedRoute><ScanningScreen /></ProtectedRoute>} />
       <Route path="/result" element={<ProtectedRoute><ResultScreen /></ProtectedRoute>} />
