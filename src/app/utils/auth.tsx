@@ -47,21 +47,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Handle deep link — app receives the callback URL with ?code=
     const urlListener = App.addListener('appUrlOpen', async ({ url }) => {
       console.log('[Auth] appUrlOpen fired:', url);
-      if (url.includes('auth/callback') || url.includes('code=')) {
-        const urlObj = new URL(url);
-        const code = urlObj.searchParams.get('code');
-        if (code) {
-          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-          console.log('[Auth] exchangeCodeForSession:', data.session?.user?.email, error);
+      if (url.includes('auth/callback')) {
+        // Tokens come in the hash fragment (#access_token=...) for implicit flow
+        const hashOrQuery = url.includes('#') ? url.split('#')[1] : url.split('?')[1];
+        const params = new URLSearchParams(hashOrQuery);
+        const access_token = params.get('access_token');
+        const refresh_token = params.get('refresh_token');
+
+        if (access_token && refresh_token) {
+          const { data, error } = await supabase.auth.setSession({ access_token, refresh_token });
+          console.log('[Auth] setSession:', data.session?.user?.email, error);
           if (!error && data.session) {
             setSession(data.session);
             setUser(data.session.user);
             setLoading(false);
           }
         }
-        if (Capacitor.isNativePlatform()) {
-          await Browser.close();
-        }
+        await Browser.close();
       }
     });
 
