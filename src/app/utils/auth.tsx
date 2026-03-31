@@ -54,9 +54,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (!error && data.session) {
             setSession(data.session);
             setUser(data.session.user);
+            setLoading(false);
           }
         }
-        // Close the in-app browser if it's open
         if (Capacitor.isNativePlatform()) {
           await Browser.close();
         }
@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = async () => {
     const redirectTo = Capacitor.isNativePlatform()
-      ? 'https://calority.vercel.app/auth/callback'
+      ? 'com.example.calority://auth/callback'
       : window.location.origin + '/auth/callback';
 
     if (Capacitor.isNativePlatform()) {
