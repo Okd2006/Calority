@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Calority</string>
+    <string name="title_activity_main">Calority</string>
+    <string name="package_name">com.example.calority</string>
+    <string name="custom_url_scheme">com.example.calority</string>
+</resources>
