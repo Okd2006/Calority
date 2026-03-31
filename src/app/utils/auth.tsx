@@ -1,6 +1,9 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase } from './supabase';
+import { Browser } from '@capacitor/browser';
+import { App } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 
 const GUEST_KEY = 'calority_guest';
 
@@ -23,12 +26,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isGuest, setIsGuest] = useState(false);
 
   useEffect(() => {
-    // Check guest mode first
     if (localStorage.getItem(GUEST_KEY) === 'true') {
       setIsGuest(true);
       setLoading(false);
       return;
     }
+
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setUser(data.session?.user ?? null);
@@ -38,16 +41,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    // Handle deep link — app receives the callback URL with ?code=
+    const urlListener = App.addListener('appUrlOpen', async ({ url }) => {
+      if (url.includes('auth/callback') || url.includes('code=')) {
+        const urlObj = new URL(url);
+        const code = urlObj.searchParams.get('code');
+        if (code) {
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          if (!error && data.session) {
+            setSession(data.session);
+            setUser(data.session.user);
+          }
+        }
+        // Close the in-app browser if it's open
+        if (Capacitor.isNativePlatform()) {
+          await Browser.close();
+        }
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+      urlListener.then(l => l.remove());
+    };
   }, []);
 
   const signInWithGoogle = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: 'https://calority.vercel.app/auth/callback' },
-    });
+    const redirectTo = Capacitor.isNativePlatform()
+      ? 'https://calority.vercel.app/auth/callback'
+      : window.location.origin + '/auth/callback';
+
+    if (Capacitor.isNativePlatform()) {
+      // On native: open in-app browser, intercept redirect via appUrlOpen
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo,
+          skipBrowserRedirect: true,
+        },
+      });
+      if (error || !data.url) return;
+      await Browser.open({ url: data.url, windowName: '_self' });
+    } else {
+      // On web: normal redirect flow
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo },
+      });
+    }
   };
 
   const signInAsGuest = () => {
