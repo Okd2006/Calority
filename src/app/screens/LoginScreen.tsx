@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router';
 import { useAuth } from '../utils/auth';
 
 export function LoginScreen() {
-  const { user, loading, signInWithGoogle } = useAuth();
+  const { user, loading, isGuest, signInWithGoogle, signInAsGuest } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && user) navigate('/home', { replace: true });
-  }, [user, loading, navigate]);
+    if (!loading && (user || isGuest)) navigate('/home', { replace: true });
+  }, [user, isGuest, loading, navigate]);
 
   return (
     <div
@@ -58,6 +58,16 @@ export function LoginScreen() {
           </svg>
           <span className="text-base text-gray-700" style={{ fontWeight: 600 }}>Continue with Google</span>
         </button>
+
+        {/* Guest mode */}
+        <button
+          onClick={signInAsGuest}
+          className="w-full py-4 rounded-full border-2 border-dashed border-gray-200 text-gray-400 active:scale-95 transition-transform"
+          style={{ fontWeight: 500 }}
+        >
+          Continue as Guest
+        </button>
+        <p className="text-xs text-gray-300 text-center -mt-2">Guest data is stored locally only</p>
       </div>
 
       <p className="text-xs text-gray-400 text-center">

@@ -11,13 +11,13 @@ import { AddMealScreen } from './screens/AddMealScreen';
 import type { ReactNode } from 'react';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, isGuest } = useAuth();
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="w-10 h-10 rounded-full border-4 border-green-200 border-t-green-500 animate-spin" />
     </div>
   );
-  return user ? <>{children}</> : <Navigate to="/login" replace />;
+  return (user || isGuest) ? <>{children}</> : <Navigate to="/login" replace />;
 }
 
 function AppRoutes() {

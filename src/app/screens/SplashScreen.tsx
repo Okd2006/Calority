@@ -17,7 +17,7 @@ export function SplashScreen() {
     <div 
       className="flex flex-col items-center justify-center min-h-screen px-8"
       style={{
-        background: 'linear-gradient(135deg, #2ECC71 0%, #27AE60 100%)'
+        background: 'linear-gradient(135deg, #5C7A5F 0%, #3D5440 100%)'
       }}
     >
       <div className="flex flex-col items-center gap-6 animate-fade-in">
