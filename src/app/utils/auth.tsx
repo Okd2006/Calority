@@ -46,11 +46,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Handle deep link — app receives the callback URL with ?code=
     const urlListener = App.addListener('appUrlOpen', async ({ url }) => {
+      console.log('[Auth] appUrlOpen fired:', url);
       if (url.includes('auth/callback') || url.includes('code=')) {
         const urlObj = new URL(url);
         const code = urlObj.searchParams.get('code');
         if (code) {
           const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          console.log('[Auth] exchangeCodeForSession:', data.session?.user?.email, error);
           if (!error && data.session) {
             setSession(data.session);
             setUser(data.session.user);
@@ -65,7 +67,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Fallback: when browser closes, re-check session
     const browserListener = Browser.addListener('browserFinished', async () => {
+      console.log('[Auth] browserFinished fired');
       const { data } = await supabase.auth.getSession();
+      console.log('[Auth] session after browser close:', data.session?.user?.email);
       if (data.session) {
         setSession(data.session);
         setUser(data.session.user);
@@ -73,10 +77,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
+    // Fallback 2: when app comes to foreground, re-check session
+    const appStateListener = App.addListener('appStateChange', async ({ isActive }) => {
+      if (isActive) {
+        const { data } = await supabase.auth.getSession();
+        console.log('[Auth] appStateChange active, session:', data.session?.user?.email);
+        if (data.session) {
+          setSession(data.session);
+          setUser(data.session.user);
+          setLoading(false);
+        }
+      }
+    });
+
     return () => {
       subscription.unsubscribe();
       urlListener.then(l => l.remove());
       browserListener.then(l => l.remove());
+      appStateListener.then(l => l.remove());
     };
   }, []);
 
