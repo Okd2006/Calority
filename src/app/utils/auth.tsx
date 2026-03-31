@@ -63,9 +63,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
+    // Fallback: when browser closes, re-check session
+    const browserListener = Browser.addListener('browserFinished', async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        setSession(data.session);
+        setUser(data.session.user);
+        setLoading(false);
+      }
+    });
+
     return () => {
       subscription.unsubscribe();
       urlListener.then(l => l.remove());
+      browserListener.then(l => l.remove());
     };
   }, []);
 
@@ -84,7 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       });
       if (error || !data.url) return;
-      await Browser.open({ url: data.url, windowName: '_self' });
+      await Browser.open({ url: data.url });
     } else {
       // On web: normal redirect flow
       await supabase.auth.signInWithOAuth({
