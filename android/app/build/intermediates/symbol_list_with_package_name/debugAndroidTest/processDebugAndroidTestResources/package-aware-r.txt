@@ -1,3 +1,0 @@
-com.example.calority.test
-style WhiteBackgroundDialogTheme
-style WhiteBackgroundTheme
