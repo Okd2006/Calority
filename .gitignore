@@ -1,3 +1,32 @@
-node_modules
-node_modules
-node_modules
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Android build artifacts
+android/.gradle/
+android/app/build/
+android/.idea/
+android/build/
+
+# iOS build artifacts
+ios/App/Pods/
+ios/.idea/
+
+# Capacitor
+android/app/src/main/assets/public/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
