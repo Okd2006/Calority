@@ -50,7 +50,7 @@ export function HomeScreen() {
     reader.onload = async (e) => {
       const raw = e.target?.result as string;
       try {
-        const { dataUrl, mimeType } = await resizeImage(raw, 1024);
+        const { dataUrl, mimeType } = await resizeImage(raw, 1600);
         const portionContext = customContext || context;
         navigate('/scan', { state: { imageDataUrl: dataUrl, mimeType, portionContext } });
       } catch {

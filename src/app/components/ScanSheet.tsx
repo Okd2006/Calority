@@ -39,7 +39,7 @@ export function ScanSheet({ onClose }: Props) {
     reader.onload = async (e) => {
       const raw = e.target?.result as string;
       try {
-        const { dataUrl, mimeType } = await resizeImage(raw, 1024);
+        const { dataUrl, mimeType } = await resizeImage(raw, 1600);
         navigate('/scan', { state: { imageDataUrl: dataUrl, mimeType, portionContext: customContext || context } });
       } catch {
         navigate('/scan', { state: { imageDataUrl: raw, mimeType: pendingFile.type, portionContext: customContext || context } });

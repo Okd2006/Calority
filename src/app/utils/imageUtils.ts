@@ -5,8 +5,8 @@
  */
 export function resizeImage(
   dataUrl: string,
-  maxSize = 1024,
-  quality = 0.9
+  maxSize = 1600,
+  quality = 0.92
 ): Promise<{ dataUrl: string; base64: string; mimeType: string }> {
   return new Promise((resolve, reject) => {
     const img = new Image();
