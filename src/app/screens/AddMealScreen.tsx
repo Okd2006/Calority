@@ -58,7 +58,7 @@ export function AddMealScreen() {
     reader.onload = async (e) => {
       const raw = e.target?.result as string;
       try {
-        const { dataUrl, base64, mimeType: mime } = await resizeImage(raw, 1024);
+        const { dataUrl, base64, mimeType: mime } = await resizeImage(raw, 1600);
         const res = await fetch(`${SUPABASE_URL}/analyze-meal`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },

@@ -35,30 +35,48 @@ app.post("/make-server-be9d8453/analyze-meal", async (c) => {
     }
 
     const contextLine = portionContext
-      ? `The user describes this as: "${portionContext}". Use this to calibrate portion size.`
-      : "Estimate the portion size from visual cues in the image (plate size, utensils, hands if visible).";
+      ? `The user describes this as: "${portionContext}". Use this as your primary signal for portion size.`
+      : "Estimate portion size from visual cues: plate diameter (~26cm standard), utensils, hands, or food height/density.";
 
-    const prompt = `You are a professional nutritionist and food recognition AI.
+    const prompt = `You are a registered dietitian and expert food recognition AI with deep knowledge of nutritional databases (USDA, NIH).
 
-Analyze the food in this image and return a JSON object. Follow these rules strictly:
+## STEP 1 — Identify
+List every distinct food item visible. For each, note:
+- Exact food type and preparation method (raw/boiled/fried/grilled/baked/sautéed)
+- Estimated weight in grams using visual reference objects
 
-1. Identify ALL food items visible in the image as a single combined meal.
-2. ${contextLine}
-3. Account for cooking method — fried food has ~30% more calories than grilled/baked equivalents.
-4. If a reference object (fork, hand, plate) is visible, use it to judge portion size accurately.
-5. Be conservative — it's better to slightly underestimate than overestimate.
-6. If the image is unclear, blurry, or not food, set confidence to "low".
+## STEP 2 — Portion calibration
+${contextLine}
+Reference weights: standard dinner plate ~26cm holds ~400-600g food. Side plate ~20cm holds ~150-250g. A fist ≈ 1 cup ≈ ~240ml volume.
 
-Return ONLY this JSON structure, no markdown, no explanation:
+## STEP 3 — Calorie calculation
+Use these density rules per 100g:
+- Cooked white rice: 130 kcal | Cooked pasta: 158 kcal | Bread: 265 kcal
+- Chicken breast grilled: 165 kcal | Chicken fried: 240 kcal | Beef lean: 250 kcal
+- Vegetables (non-starchy): 25-40 kcal | Legumes cooked: 120 kcal
+- Cheese: 350-400 kcal | Oils/butter: 720-900 kcal | Nuts: 550-650 kcal
+- Eggs: 155 kcal each ~50g | Milk whole: 61 kcal/100ml
+Multiply each item's weight × (kcal per 100g / 100), then sum all items.
+
+## STEP 4 — Macro split
+Derive protein/carbs/fat from the identified ingredients using standard macro ratios.
+Verify: (protein × 4) + (carbs × 4) + (fat × 9) should be within 10% of total calories.
+
+## STEP 5 — Confidence
+- high: food clearly visible, portion estimable, standard dish
+- medium: partially obscured, mixed dish, or unusual portion
+- low: blurry image, non-food, or unrecognizable dish
+
+Return ONLY this JSON, no markdown, no explanation, no extra text:
 {
-  "name": "string (specific food name, e.g. 'Grilled Chicken Breast with Rice')",
+  "name": "string (specific name, e.g. 'Butter Chicken with Basmati Rice')",
   "calories": number,
   "protein": number,
   "carbs": number,
   "fat": number,
-  "ingredients": ["string (ingredient with estimated quantity, e.g. 'Chicken breast 150g')"],
+  "ingredients": ["string (e.g. 'Basmati rice cooked 180g — 234 kcal')"],
   "confidence": "low" | "medium" | "high",
-  "confidenceNote": "string (brief reason if confidence is low or medium, empty string if high)"
+  "confidenceNote": "string (brief reason if not high, else empty string)"
 }`;
 
     const response = await fetch(
