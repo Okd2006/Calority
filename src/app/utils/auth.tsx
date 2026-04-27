@@ -1,6 +1,9 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase } from './supabase';
+import { Browser } from '@capacitor/browser';
+import { App } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 
 const GUEST_KEY = 'calority_guest';
 
@@ -41,14 +44,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    // Native: intercept OAuth callback URL with tokens in hash fragment
+    const urlListener = App.addListener('appUrlOpen', async ({ url }) => {
+      if (url.includes('auth/callback')) {
+        const hashOrQuery = url.includes('#') ? url.split('#')[1] : url.split('?')[1];
+        const params = new URLSearchParams(hashOrQuery);
+        const access_token = params.get('access_token');
+        const refresh_token = params.get('refresh_token');
+        if (access_token && refresh_token) {
+          const { data, error } = await supabase.auth.setSession({ access_token, refresh_token });
+          if (!error && data.session) {
+            setSession(data.session);
+            setUser(data.session.user);
+            setLoading(false);
+          }
+        }
+        await Browser.close();
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+      urlListener.then(l => l.remove());
+    };
   }, []);
 
   const signInWithGoogle = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin + '/home' },
-    });
+    if (Capacitor.isNativePlatform()) {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: 'com.example.calority://auth/callback',
+          skipBrowserRedirect: true,
+        },
+      });
+      if (error || !data.url) return;
+      await Browser.open({ url: data.url });
+    } else {
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.origin + '/auth/callback' },
+      });
+    }
   };
 
   const signInAsGuest = () => {
