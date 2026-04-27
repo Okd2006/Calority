@@ -91,7 +91,7 @@ export function AddMealScreen() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-8" style={{ fontFamily: 'Poppins, sans-serif' }}>
+    <div className="min-h-screen pb-8" style={{ fontFamily: 'Poppins, sans-serif', background: 'linear-gradient(to bottom, #A8E6B0 0%, #F0FAF1 100%)' }}>
       {/* Hidden inputs */}
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} />
       <input ref={uploadRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
@@ -217,5 +217,6 @@ export function AddMealScreen() {
     </div>
   );
 }
+
 
 

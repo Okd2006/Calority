@@ -61,14 +61,13 @@ export function HomeScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-white pb-safe" style={{ fontFamily: 'Poppins, sans-serif' }}>
+    <div className="min-h-screen pb-safe" style={{ fontFamily: 'Poppins, sans-serif', background: 'linear-gradient(to bottom, #A8E6B0 0%, #F0FAF1 100%)' }}>
       {/* Hidden file inputs */}
       <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} />
       <input ref={uploadInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
 
-      {/* Header */}
-      <div className="pt-safe px-6 pb-6">
-        <h1 className="text-3xl tracking-tight" style={{ fontWeight: 600, color: '#1F2937' }}>
+      <div className="px-13 py-3 rounded-b-sm flex items-center justify-center" style={{ backgroundColor: '#2ECC71', paddingTop: 'max(1.00rem, env(safe-area-inset-top))' }}>
+        <h1 className="text-xl tracking-tight" style={{ fontWeight: 600, color: 'white' }}>
           What are you eating today?
         </h1>
       </div>
@@ -220,5 +219,6 @@ export function HomeScreen() {
     </div>
   );
 }
+
 
 

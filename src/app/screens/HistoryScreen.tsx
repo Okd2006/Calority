@@ -176,10 +176,9 @@ export function HistoryScreen() {
     );
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-safe" style={{ fontFamily: 'Poppins, sans-serif' }}>
-      <div className="bg-white pt-safe px-6 pb-4 border-b border-gray-100">
-        <h1 className="text-3xl tracking-tight" style={{ fontWeight: 600, color: '#1F2937' }}>History</h1>
-        <p className="text-sm text-gray-500 mt-1">{entries.length} meals logged</p>
+    <div className="min-h-screen pb-safe" style={{ fontFamily: 'Poppins, sans-serif', background: 'linear-gradient(to bottom, #A8E6B0 0%, #F0FAF1 100%)' }}>
+      <div className="px-13 py-3 rounded-b-sm flex items-center justify-center" style={{ backgroundColor: '#2ECC71', paddingTop: 'max(1.00rem, env(safe-area-inset-top))' }}>
+        <h1 className="text-xl tracking-tight" style={{ fontWeight: 600, color: 'white' }}>History</h1>
       </div>
 
       {entries.length === 0 ? (
@@ -261,3 +260,4 @@ export function HistoryScreen() {
     </div>
   );
 }
+

@@ -13,16 +13,17 @@ export function LoginScreen() {
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-between px-8 py-16"
-      style={{ fontFamily: 'Poppins, sans-serif', background: 'linear-gradient(160deg, #f0fdf4 0%, #ffffff 60%)' }}
+      style={{ fontFamily: 'Poppins, sans-serif', background: 'linear-gradient(to bottom, #A8E6B0 0%, #F0FAF1 100%)' }}
     >
       {/* Logo + tagline */}
       <div />
       <div className="flex flex-col items-center gap-6 w-full">
-        <div
-          className="w-24 h-24 rounded-3xl flex items-center justify-center shadow-lg text-5xl"
-          style={{ backgroundColor: 'var(--main-green)' }}
-        >
-          🥗
+        <div className="w-24 h-24 rounded-full shadow-lg overflow-hidden">
+          <img
+            src="/CALORITYLOGO.png"
+            alt="Calority"
+            className="w-full h-full object-cover scale-[1.18]"
+          />
         </div>
         <div className="text-center">
           <h1 className="text-4xl tracking-tight" style={{ fontWeight: 700, color: '#1F2937' }}>Calority</h1>
@@ -76,3 +77,4 @@ export function LoginScreen() {
     </div>
   );
 }
+

@@ -73,20 +73,18 @@ export function ProfileScreen() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 overflow-y-auto pb-safe" style={{ fontFamily: 'Poppins, sans-serif' }}>
+    <div className="min-h-screen overflow-y-auto pb-safe" style={{ fontFamily: 'Poppins, sans-serif', background: 'linear-gradient(to bottom, #A8E6B0 0%, #F0FAF1 100%)' }}>
 
-      {/* Header */}
-      <div className="bg-white pt-safe px-6 pb-5 border-b border-gray-100">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl tracking-tight" style={{ fontWeight: 600, color: '#1F2937' }}>Profile</h1>
-          <button
-            onClick={signOut}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-gray-200 text-sm text-gray-500 active:bg-gray-100"
-          >
-            <LogOut className="w-4 h-4" />
-            Sign out
-          </button>
-        </div>
+      <div className="px-13 py-3 rounded-b-sm flex items-center justify-between" style={{ backgroundColor: '#2ECC71', paddingTop: 'max(1.00rem, env(safe-area-inset-top))' }}>
+        <h1 className="text-xl tracking-tight" style={{ fontWeight: 600, color: 'white' }}>Profile</h1>
+        <button
+          onClick={signOut}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm active:opacity-80"
+          style={{ backgroundColor: 'rgba(255,255,255,0.25)', color: 'white' }}
+        >
+          <LogOut className="w-4 h-4" />
+          Sign out
+        </button>
       </div>
 
       {/* Avatar + name card */}
@@ -358,3 +356,4 @@ export function ProfileScreen() {
     </div>
   );
 }
+

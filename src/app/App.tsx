@@ -8,6 +8,7 @@ import { ResultScreen } from './screens/ResultScreen';
 import { HistoryScreen } from './screens/HistoryScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
 import { AddMealScreen } from './screens/AddMealScreen';
+import { TextMealScreen } from './screens/TextMealScreen';
 import type { ReactNode } from 'react';
 import { useEffect } from 'react';
 
@@ -50,6 +51,7 @@ function AppRoutes() {
       <Route path="/history" element={<ProtectedRoute><HistoryScreen /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><ProfileScreen /></ProtectedRoute>} />
       <Route path="/add-meal" element={<ProtectedRoute><AddMealScreen /></ProtectedRoute>} />
+      <Route path="/text-meal" element={<ProtectedRoute><TextMealScreen /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
@@ -57,7 +59,7 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(to bottom, #A8E6B0 0%, #F0FAF1 100%)' }}>
       <div className="w-full md:max-w-[390px] min-h-screen md:h-screen bg-white relative md:overflow-hidden md:shadow-2xl">
         <BrowserRouter>
           <AuthProvider>
@@ -68,3 +70,4 @@ export default function App() {
     </div>
   );
 }
+

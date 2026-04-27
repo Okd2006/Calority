@@ -16,9 +16,10 @@ export function BottomNav() {
   return (
     <>
       <nav
-        className="fixed bottom-0 left-0 right-0 z-50 md:max-w-[390px] md:mx-auto bg-white"
+        className="fixed bottom-0 left-0 right-0 z-50 md:max-w-[390px] md:mx-auto rounded-t-xl"
         style={{
-          borderTop: '1.5px solid #F0F0F0',
+          background: '#2ECC71',
+          borderTop: '1.5px solid #27AE60',
           paddingBottom: 'env(safe-area-inset-bottom)',
         }}
       >
@@ -38,21 +39,18 @@ export function BottomNav() {
             <div
               className="w-11 h-11 rounded-2xl flex items-center justify-center transition-all"
               style={{
-                backgroundColor: location.pathname === '/scan' ? '#1C1917' : '#EDEAE6',
+                backgroundColor: 'rgba(255,255,255,0.25)',
               }}
             >
               <ScanLine
                 className="w-5 h-5"
-                style={{ color: location.pathname === '/scan' ? 'white' : '#374151' }}
+                style={{ color: 'white' }}
                 strokeWidth={2}
               />
             </div>
             <span
               className="text-[10px]"
-              style={{
-                color: location.pathname === '/scan' ? '#1C1917' : '#374151',
-                fontWeight: location.pathname === '/scan' ? 600 : 400,
-              }}
+              style={{ color: 'white', fontWeight: 600 }}
             >
               Scan
             </span>
@@ -79,12 +77,12 @@ function NavItem({ path, icon: Icon, label, active }: {
     >
       <Icon
         className="w-5 h-5 transition-colors"
-        style={{ color: active ? '#5C7A5F' : '#374151' }}
+        style={{ color: active ? 'white' : 'rgba(255,255,255,0.6)' }}
         strokeWidth={active ? 2.5 : 1.8}
       />
       <span
         className="text-[10px] transition-colors"
-        style={{ color: active ? '#5C7A5F' : '#374151', fontWeight: active ? 600 : 400 }}
+        style={{ color: active ? 'white' : 'rgba(255,255,255,0.6)', fontWeight: active ? 700 : 400 }}
       >
         {label}
       </span>

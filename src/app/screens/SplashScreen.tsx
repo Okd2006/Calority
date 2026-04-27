@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { Leaf } from 'lucide-react';
 
 export function SplashScreen() {
   const navigate = useNavigate();
@@ -22,16 +21,13 @@ export function SplashScreen() {
     >
       <div className="flex flex-col items-center gap-6 animate-fade-in">
         <div className="relative">
-          <div 
-            className="w-24 h-24 rounded-full flex items-center justify-center shadow-2xl"
-            style={{ backgroundColor: 'white' }}
-          >
-            <Leaf 
-              className="w-14 h-14" 
-              style={{ color: 'var(--main-green)' }}
-              strokeWidth={2.5}
-            />
-          </div>
+        <div className="w-28 h-28 rounded-full overflow-hidden shadow-2xl">
+          <img
+            src="/CALORITYLOGO.png"
+            alt="Calority"
+            className="w-full h-full object-cover scale-[1.18]"
+          />
+        </div>
         </div>
         
         <h1 
@@ -58,5 +54,6 @@ export function SplashScreen() {
     </div>
   );
 }
+
 
 

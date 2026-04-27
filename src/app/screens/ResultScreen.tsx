@@ -76,7 +76,7 @@ export function ResultScreen() {
 
   if (error || !mealData) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6 gap-6" style={{ fontFamily: 'Poppins, sans-serif' }}>
+      <div className="min-h-screen flex flex-col items-center justify-center px-6 gap-6" style={{ fontFamily: 'Poppins, sans-serif', backgroundColor: '#EEF6EF' }}>
         <AlertCircle className="w-16 h-16 text-red-400" />
         <p className="text-center text-gray-600">{error ?? 'No meal data found.'}</p>
         <button onClick={() => navigate('/home')} className="px-8 py-3 rounded-full text-white" style={{ backgroundColor: 'var(--main-green)', fontWeight: 600 }}>
@@ -112,7 +112,7 @@ export function ResultScreen() {
   const currentMealData = { name, calories, protein, carbs, fat, ingredients };
 
   return (
-    <div className="min-h-screen bg-white pb-8 overflow-y-auto" style={{ fontFamily: 'Poppins, sans-serif' }}>
+    <div className="min-h-screen pb-8 overflow-y-auto" style={{ fontFamily: 'Poppins, sans-serif', background: 'linear-gradient(to bottom, #A8E6B0 0%, #F0FAF1 100%)' }}>
       {/* Header */}
       <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center gap-4 z-10">
         <button onClick={() => navigate('/home')} className="p-2 -ml-2 active:bg-gray-100 rounded-full transition-colors">
@@ -310,5 +310,6 @@ export function ResultScreen() {
     </div>
   );
 }
+
 
 

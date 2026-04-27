@@ -23,15 +23,60 @@ app.get("/make-server-be9d8453/health", (c) => {
 
 app.post("/make-server-be9d8453/analyze-meal", async (c) => {
   try {
-    const { imageBase64, mimeType = "image/jpeg", portionContext = "" } = await c.req.json();
-
-    if (!imageBase64) {
-      return c.json({ error: "imageBase64 is required" }, 400);
-    }
+    const { imageBase64, mimeType = "image/jpeg", portionContext = "", textOnly = false, foodName = "", description = "" } = await c.req.json();
 
     const apiKey = Deno.env.get("GEMINI_API_KEY");
     if (!apiKey) {
       return c.json({ error: "GEMINI_API_KEY not configured" }, 500);
+    }
+
+    // Text-only path — no image
+    if (textOnly || !imageBase64) {
+      const textPrompt = `You are a registered dietitian with deep knowledge of nutritional databases (USDA, NIH).
+
+The user has described a meal they ate:
+Food name: "${foodName || portionContext}"
+${description ? `Additional description: "${description}"` : ""}
+${portionContext && !foodName ? `Context: "${portionContext}"` : ""}
+
+Based on this text description, estimate the nutritional content for this meal.
+Use standard portion sizes if not specified. Be realistic and accurate.
+
+Return ONLY this JSON, no markdown, no explanation:
+{
+  "name": "string (clean food name)",
+  "calories": number,
+  "protein": number,
+  "carbs": number,
+  "fat": number,
+  "ingredients": ["string (estimated ingredient with quantity, e.g. 'Chicken breast 150g')"],
+  "confidence": "low" | "medium" | "high",
+  "confidenceNote": "string (brief note about assumptions made)"
+}`;
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: textPrompt }] }],
+            generationConfig: { temperature: 0.1 },
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const err = await response.text();
+        return c.json({ error: `Gemini API error: ${err}` }, 500);
+      }
+
+      const geminiData = await response.json();
+      const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) return c.json({ error: "No response from Gemini" }, 500);
+
+      const cleaned = text.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
+      return c.json(JSON.parse(cleaned));
     }
 
     const contextLine = portionContext
@@ -118,6 +163,74 @@ Return ONLY this JSON, no markdown, no explanation, no extra text:
 
     const mealData = JSON.parse(cleaned);
     return c.json(mealData);
+  } catch (err) {
+    return c.json({ error: String(err) }, 500);
+  }
+});
+
+app.post("/make-server-be9d8453/analyze-text", async (c) => {
+  try {
+    const { foodName = "", description = "" } = await c.req.json();
+
+    if (!foodName) {
+      return c.json({ error: "foodName is required" }, 400);
+    }
+
+    const apiKey = Deno.env.get("GEMINI_API_KEY");
+    if (!apiKey) {
+      return c.json({ error: "GEMINI_API_KEY not configured" }, 500);
+    }
+
+    const prompt = `You are a registered dietitian with deep knowledge of nutritional databases (USDA, NIH).
+
+The user has described a meal they ate:
+Food name: "${foodName}"
+${description ? `Additional description: "${description}"` : ""}
+
+Based on this description, estimate the nutritional content for a typical single serving of this meal.
+
+Use standard portion sizes and nutritional data. Be realistic and accurate.
+
+Return ONLY this JSON, no markdown, no explanation:
+{
+  "name": "string (clean food name)",
+  "calories": number,
+  "protein": number,
+  "carbs": number,
+  "fat": number,
+  "ingredients": ["string (estimated ingredient with quantity, e.g. 'Chicken breast 150g')"],
+  "confidence": "low" | "medium" | "high",
+  "confidenceNote": "string (brief note about assumptions made)"
+}`;
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.1 },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const err = await response.text();
+      return c.json({ error: `Gemini API error: ${err}` }, 500);
+    }
+
+    const geminiData = await response.json();
+    const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) return c.json({ error: "No response from Gemini" }, 500);
+
+    const cleaned = text
+      .replace(/^```json\s*/i, '')
+      .replace(/^```\s*/i, '')
+      .replace(/```\s*$/i, '')
+      .trim();
+
+    return c.json(JSON.parse(cleaned));
   } catch (err) {
     return c.json({ error: String(err) }, 500);
   }

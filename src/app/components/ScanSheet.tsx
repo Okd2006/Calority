@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { X, Camera, Upload, PlusCircle, CheckCircle2 } from 'lucide-react';
+import { X, Camera, Upload, PlusCircle, CheckCircle2, PenLine } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { resizeImage } from '../utils/imageUtils';
 
@@ -120,6 +120,20 @@ export function ScanSheet({ onClose }: Props) {
               <div className="text-left">
                 <p className="text-sm" style={{ fontWeight: 600, color: '#1C1917' }}>Multi-scan Meal</p>
                 <p className="text-xs text-gray-400">Scan multiple items together</p>
+              </div>
+            </button>
+
+            {/* Describe by text */}
+            <button
+              onClick={() => { onClose(); navigate('/text-meal'); }}
+              className="w-full flex items-center gap-4 p-4 rounded-2xl border border-gray-100 active:bg-gray-50 transition-colors"
+            >
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#F0FDF4' }}>
+                <PenLine className="w-6 h-6" style={{ color: '#2ECC71' }} strokeWidth={2} />
+              </div>
+              <div className="text-left">
+                <p className="text-sm" style={{ fontWeight: 600, color: '#1C1917' }}>Describe Your Meal</p>
+                <p className="text-xs text-gray-400">No photo? Type what you ate</p>
               </div>
             </button>
           </div>
