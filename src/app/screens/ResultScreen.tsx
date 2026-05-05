@@ -1,9 +1,17 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, AlertCircle, Plus, Pencil, Check, X, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Plus, Pencil, Check, X, CheckCircle2, RefreshCw, MessageSquarePlus } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { getGoals, pct, summaryLabel, type Goals } from '../utils/goals';
 import { saveMeal } from '../utils/history';
+
+const SUPABASE_URL = 'https://vlcmcyzpgsywvtjlsqqy.supabase.co/functions/v1/make-server-be9d8453';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZsY21jeXpwZ3N5d3Z0amxzcXF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MjI2MzIsImV4cCI6MjA4OTI5ODYzMn0.1Y7ULHx1QQJIPpI47k-arad4mFiZqL7-ZGUbl4tcjp8';
+
+const CONTEXT_SUGGESTIONS = [
+  'Home cooked', 'Restaurant portion', 'Fast food', 'Small snack',
+  'Large portion', 'Takeaway', 'Half plate', 'Full plate', 'Extra ghee/oil',
+];
 
 function EditableNumber({
   value, onChange, color, unit
@@ -21,9 +29,7 @@ function EditableNumber({
     return (
       <div className="flex items-center gap-1">
         <input
-          autoFocus
-          type="number"
-          value={draft}
+          autoFocus type="number" value={draft}
           onChange={e => setDraft(e.target.value)}
           onBlur={commit}
           onKeyDown={e => e.key === 'Enter' && commit()}
@@ -47,26 +53,84 @@ function EditableNumber({
 export function ResultScreen() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { mealData, imageDataUrl, error } = (location.state as any) ?? {};
+  const { mealData: initialMealData, imageDataUrl, error } = (location.state as any) ?? {};
   const [goals, setGoals] = useState<Goals>({ calories: 2000, protein: 150, carbs: 250, fat: 65 });
 
   useEffect(() => { getGoals().then(setGoals); }, []);
 
-  const [name, setName] = useState(mealData?.name ?? '');
+  const [mealData, setMealData] = useState(initialMealData);
+  const [name, setName] = useState(initialMealData?.name ?? '');
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState('');
   const [servings, setServings] = useState(1);
-  const [base] = useState({
-    calories: mealData?.calories ?? 0,
-    protein: mealData?.protein ?? 0,
-    carbs: mealData?.carbs ?? 0,
-    fat: mealData?.fat ?? 0,
+  const [base, setBase] = useState({
+    calories: initialMealData?.calories ?? 0,
+    protein: initialMealData?.protein ?? 0,
+    carbs: initialMealData?.carbs ?? 0,
+    fat: initialMealData?.fat ?? 0,
   });
   const [overrides, setOverrides] = useState<{ calories?: number; protein?: number; carbs?: number; fat?: number }>({});
-  const ingredients: string[] = mealData?.ingredients ?? [];
+  const [ingredients, setIngredients] = useState<string[]>(initialMealData?.ingredients ?? []);
   const confidence: string = mealData?.confidence ?? 'medium';
   const confidenceNote: string = mealData?.confidenceNote ?? '';
   const [saved, setSaved] = useState(false);
+
+  // Re-analyze sheet
+  const [showReanalyze, setShowReanalyze] = useState(false);
+  const [reContext, setReContext] = useState('');
+  const [reCustom, setReCustom] = useState('');
+  const [reanalyzing, setReanalyzing] = useState(false);
+  const [reError, setReError] = useState('');
+
+  const handleReanalyze = async () => {
+    const context = reCustom.trim() || reContext;
+    if (!context) return;
+    setReanalyzing(true);
+    setReError('');
+
+    try {
+      const base64 = imageDataUrl ? imageDataUrl.split(',')[1] : null;
+      const res = await fetch(`${SUPABASE_URL}/analyze-meal`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          imageBase64: base64,
+          mimeType: 'image/jpeg',
+          portionContext: context,
+          textOnly: !base64,
+          foodName: !base64 ? name : '',
+          description: !base64 ? context : '',
+        }),
+      });
+
+      if (!res.ok) throw new Error();
+      const newData = await res.json();
+      if (newData.error) throw new Error(newData.error);
+
+      // Update all state with new result
+      setMealData(newData);
+      setName(newData.name ?? name);
+      setBase({
+        calories: newData.calories ?? 0,
+        protein: newData.protein ?? 0,
+        carbs: newData.carbs ?? 0,
+        fat: newData.fat ?? 0,
+      });
+      setIngredients(newData.ingredients ?? []);
+      setOverrides({});
+      setServings(1);
+      setShowReanalyze(false);
+      setReContext('');
+      setReCustom('');
+    } catch {
+      setReError('Could not re-analyze. Please try again.');
+    } finally {
+      setReanalyzing(false);
+    }
+  };
 
   const handleSave = async () => {
     await saveMeal({ name, calories, protein, carbs, fat, ingredients, imageDataUrl });
@@ -113,12 +177,24 @@ export function ResultScreen() {
 
   return (
     <div className="min-h-screen pb-8 overflow-y-auto" style={{ fontFamily: 'Poppins, sans-serif', background: 'linear-gradient(to bottom, #A8E6B0 0%, #F0FAF1 100%)' }}>
+
       {/* Header */}
-      <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center gap-4 z-10">
-        <button onClick={() => navigate('/home')} className="p-2 -ml-2 active:bg-gray-100 rounded-full transition-colors">
-          <ArrowLeft className="w-6 h-6 text-gray-700" />
+      <div
+        className="px-4 py-3 rounded-b-sm flex items-center gap-3 sticky top-0 z-10"
+        style={{ backgroundColor: '#2ECC71', paddingTop: 'max(1.00rem, env(safe-area-inset-top))' }}
+      >
+        <button onClick={() => navigate('/home')} className="p-1">
+          <ArrowLeft className="w-5 h-5 text-white" />
         </button>
-        <h1 className="text-xl" style={{ fontWeight: 600 }}>Meal Analysis</h1>
+        <h1 className="text-xl flex-1" style={{ fontWeight: 600, color: 'white' }}>Meal Analysis</h1>
+        <button
+          onClick={() => setShowReanalyze(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm"
+          style={{ backgroundColor: 'rgba(255,255,255,0.25)', color: 'white', fontWeight: 600 }}
+        >
+          <RefreshCw className="w-3.5 h-3.5" />
+          Re-analyze
+        </button>
       </div>
 
       {/* Meal Image */}
@@ -130,14 +206,11 @@ export function ResultScreen() {
         </div>
       </div>
 
-      {/* Food Name — editable */}
+      {/* Food Name */}
       <div className="px-6 pb-4">
         {editingName ? (
           <div className="flex items-center gap-2">
-            <input
-              autoFocus
-              value={nameDraft}
-              onChange={e => setNameDraft(e.target.value)}
+            <input autoFocus value={nameDraft} onChange={e => setNameDraft(e.target.value)}
               className="flex-1 text-2xl border-b-2 outline-none"
               style={{ fontWeight: 600, color: '#1F2937', borderColor: 'var(--main-green)' }}
               onKeyDown={e => { if (e.key === 'Enter') { setName(nameDraft); setEditingName(false); } }}
@@ -161,12 +234,19 @@ export function ResultScreen() {
             style={{ backgroundColor: confidence === 'low' ? '#FEF2F2' : '#FFFBEB', border: `1px solid ${confidence === 'low' ? '#FECACA' : '#FDE68A'}` }}
           >
             <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: confidence === 'low' ? '#EF4444' : '#F59E0B' }} />
-            <div>
+            <div className="flex-1">
               <p className="text-sm" style={{ fontWeight: 600, color: confidence === 'low' ? '#DC2626' : '#D97706' }}>
                 {confidence === 'low' ? 'Low confidence result' : 'Moderate confidence'}
               </p>
               {confidenceNote && <p className="text-xs mt-0.5" style={{ color: confidence === 'low' ? '#EF4444' : '#F59E0B' }}>{confidenceNote}</p>}
-              <p className="text-xs text-gray-500 mt-1">Tap any value below to correct it manually.</p>
+              <button
+                onClick={() => setShowReanalyze(true)}
+                className="mt-2 flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full"
+                style={{ backgroundColor: confidence === 'low' ? '#FEE2E2' : '#FEF3C7', color: confidence === 'low' ? '#DC2626' : '#D97706', fontWeight: 600 }}
+              >
+                <MessageSquarePlus className="w-3 h-3" />
+                Add context for better result
+              </button>
             </div>
           </div>
         </div>
@@ -174,20 +254,16 @@ export function ResultScreen() {
 
       {/* Serving size adjuster */}
       <div className="px-6 pb-4">
-        <div className="flex items-center justify-between bg-gray-50 rounded-2xl px-5 py-3">
+        <div className="flex items-center justify-between bg-white rounded-2xl px-5 py-3 shadow-sm">
           <span className="text-sm text-gray-600" style={{ fontWeight: 600 }}>Serving size</span>
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setServings(s => Math.max(0.25, parseFloat((s - 0.25).toFixed(2))))}
+            <button onClick={() => setServings(s => Math.max(0.25, parseFloat((s - 0.25).toFixed(2))))}
               className="w-8 h-8 rounded-full flex items-center justify-center text-white text-lg"
-              style={{ backgroundColor: 'var(--energy-orange)' }}
-            >−</button>
+              style={{ backgroundColor: 'var(--energy-orange)' }}>−</button>
             <span className="text-lg w-10 text-center" style={{ fontWeight: 600 }}>{servings}x</span>
-            <button
-              onClick={() => setServings(s => parseFloat((s + 0.25).toFixed(2)))}
+            <button onClick={() => setServings(s => parseFloat((s + 0.25).toFixed(2)))}
               className="w-8 h-8 rounded-full flex items-center justify-center text-white text-lg"
-              style={{ backgroundColor: 'var(--main-green)' }}
-            >+</button>
+              style={{ backgroundColor: 'var(--main-green)' }}>+</button>
           </div>
         </div>
         <p className="text-xs text-gray-400 mt-1 px-1">Tap any number below to edit it manually</p>
@@ -199,13 +275,7 @@ export function ResultScreen() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/90 text-sm mb-1">Total Calories</p>
-              <div className="flex items-end gap-1">
-                <EditableNumber
-                  value={calories}
-                  onChange={v => setOverrides(o => ({ ...o, calories: v }))}
-                  color="white"
-                />
-              </div>
+              <EditableNumber value={calories} onChange={v => setOverrides(o => ({ ...o, calories: v }))} color="white" />
               <p className="text-white/90 text-sm">kcal</p>
             </div>
             <div className="w-24 h-24">
@@ -221,17 +291,12 @@ export function ResultScreen() {
         </div>
       </div>
 
-      {/* Macro Cards — all editable */}
+      {/* Macro Cards */}
       <div className="px-6 grid grid-cols-3 gap-3 pb-6">
         {macros.map(({ key, label, value, goal, color }) => (
-          <div key={label} className="rounded-2xl p-4 shadow-sm border border-gray-100">
+          <div key={label} className="rounded-2xl p-4 shadow-sm bg-white border border-gray-100">
             <p className="text-xs text-gray-500 mb-1">{label}</p>
-            <EditableNumber
-              value={value}
-              onChange={v => setOverrides(o => ({ ...o, [key]: v }))}
-              color={color}
-              unit="g"
-            />
+            <EditableNumber value={value} onChange={v => setOverrides(o => ({ ...o, [key]: v }))} color={color} unit="g" />
             <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mt-2">
               <div className="h-full rounded-full" style={{ width: `${pct(value, goal)}%`, backgroundColor: color }} />
             </div>
@@ -243,7 +308,7 @@ export function ResultScreen() {
       {/* Goals Summary */}
       <div className="px-6 pb-6">
         <h3 className="text-lg mb-3" style={{ fontWeight: 600, color: '#1F2937' }}>How this fits your day</h3>
-        <div className="rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="rounded-2xl border border-gray-100 shadow-sm overflow-hidden bg-white">
           <div className="p-4 border-b border-gray-100">
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm text-gray-600">Calories</span>
@@ -291,8 +356,7 @@ export function ResultScreen() {
       {/* Action Buttons */}
       <div className="px-6 flex flex-col gap-3">
         <button
-          onClick={handleSave}
-          disabled={saved}
+          onClick={handleSave} disabled={saved}
           className="w-full py-4 rounded-full shadow-md transition-all active:scale-95 text-white flex items-center justify-center gap-2"
           style={{ backgroundColor: saved ? '#27AE60' : 'var(--main-green)', fontWeight: 600 }}
         >
@@ -300,16 +364,81 @@ export function ResultScreen() {
         </button>
         <button
           onClick={() => navigate('/add-meal', { state: { items: [{ ...currentMealData, imageDataUrl }] } })}
-          className="w-full py-4 rounded-full border-2 transition-transform active:scale-95 flex items-center justify-center gap-2"
+          className="w-full py-4 rounded-full border-2 transition-transform active:scale-95 flex items-center justify-center gap-2 bg-white"
           style={{ borderColor: 'var(--main-green)', color: 'var(--main-green)', fontWeight: 600 }}
         >
           <Plus className="w-5 h-5" />
           Add More Foods
         </button>
       </div>
+
+      {/* Re-analyze Sheet */}
+      {showReanalyze && (
+        <div className="fixed inset-0 z-50 flex items-end" style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}>
+          <div className="w-full max-w-[390px] mx-auto bg-white rounded-t-3xl p-6" style={{ fontFamily: 'Poppins, sans-serif' }}>
+            {/* Handle */}
+            <div className="flex justify-center mb-4">
+              <div className="w-10 h-1 rounded-full bg-gray-200" />
+            </div>
+
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-lg" style={{ fontWeight: 600 }}>Re-analyze with Context</h2>
+              <button onClick={() => setShowReanalyze(false)}><X className="w-5 h-5 text-gray-400" /></button>
+            </div>
+            <p className="text-sm text-gray-400 mb-4">
+              Tell AI more about this meal to get a more accurate result
+            </p>
+
+            {/* Quick chips */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              {CONTEXT_SUGGESTIONS.map(opt => (
+                <button
+                  key={opt}
+                  onClick={() => setReContext(c => c === opt ? '' : opt)}
+                  className="px-3 py-1.5 rounded-full text-xs border-2 transition-all"
+                  style={{
+                    borderColor: reContext === opt ? '#2ECC71' : '#E5E7EB',
+                    backgroundColor: reContext === opt ? '#F0FDF4' : 'white',
+                    color: reContext === opt ? '#2ECC71' : '#374151',
+                    fontWeight: reContext === opt ? 600 : 400,
+                  }}
+                >
+                  {reContext === opt && <Check className="w-3 h-3 inline mr-1" />}
+                  {opt}
+                </button>
+              ))}
+            </div>
+
+            {/* Custom input */}
+            <textarea
+              rows={3}
+              placeholder="Or describe in detail — e.g. 'This was a large restaurant portion of butter chicken with 2 naans, extra cream'"
+              value={reCustom}
+              onChange={e => setReCustom(e.target.value)}
+              className="w-full px-4 py-3 rounded-2xl border-2 text-sm outline-none resize-none mb-4"
+              style={{
+                fontFamily: 'Poppins, sans-serif',
+                borderColor: reCustom ? '#2ECC71' : '#E5E7EB',
+              }}
+            />
+
+            {reError && <p className="text-xs text-red-500 mb-3 text-center">{reError}</p>}
+
+            <button
+              onClick={handleReanalyze}
+              disabled={(!reContext && !reCustom.trim()) || reanalyzing}
+              className="w-full py-4 rounded-full text-white flex items-center justify-center gap-2 disabled:opacity-50"
+              style={{ backgroundColor: '#2ECC71', fontWeight: 600 }}
+            >
+              {reanalyzing ? (
+                <><div className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin" /> Analyzing...</>
+              ) : (
+                <><RefreshCw className="w-4 h-4" /> Re-analyze Now</>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
-
-
