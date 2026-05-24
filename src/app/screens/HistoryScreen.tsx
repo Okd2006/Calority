@@ -5,6 +5,7 @@ import { getHistory, deleteMeal, groupByDate, formatTime, formatDate, type Histo
 import { getGoals, pct } from '../utils/goals';
 import type { Goals } from '../utils/goals';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { useAuth } from '../utils/auth';
 
 function getCachedHistory(): HistoryEntry[] {
   try { return JSON.parse(localStorage.getItem('calority_history') ?? '[]'); } catch { return []; }
@@ -153,12 +154,18 @@ function MealDetailSheet({ entry, goals, onClose, onDelete }: {
 }
 
 export function HistoryScreen() {
-  const [entries, setEntries] = useState<HistoryEntry[]>(getCachedHistory);
+  const { isGuest } = useAuth();
+  // For guests: show cache instantly. For logged-in users: start empty to avoid showing stale data
+  const [entries, setEntries] = useState<HistoryEntry[]>(isGuest ? getCachedHistory : []);
   const [goals, setGoals] = useState<Goals>(getCachedGoals);
+  const [loading, setLoading] = useState(!isGuest);
   const [selected, setSelected] = useState<HistoryEntry | null>(null);
 
   useEffect(() => {
-    getHistory().then(setEntries);
+    getHistory().then(data => {
+      setEntries(data);
+      setLoading(false);
+    });
     getGoals().then(setGoals);
   }, []);
 
@@ -181,15 +188,19 @@ export function HistoryScreen() {
         <h1 className="text-xl tracking-tight" style={{ fontWeight: 600, color: 'white' }}>History</h1>
       </div>
 
-      {entries.length === 0 ? (
+      {loading ? (
+        <div className="flex flex-col items-center justify-center px-6 mt-24 gap-4">
+          <div className="w-8 h-8 rounded-full border-4 border-green-200 border-t-green-500 animate-spin" />
+          <p className="text-sm text-gray-400">Loading your meals...</p>
+        </div>
+      ) : entries.length === 0 ? (
         <div className="flex flex-col items-center justify-center px-6 mt-24 gap-4 text-center">
           <UtensilsCrossed className="w-16 h-16 text-gray-200" />
           <p className="text-lg text-gray-400" style={{ fontWeight: 600 }}>No meals saved yet</p>
           <p className="text-sm text-gray-400">Scan a meal and tap "Save Meal" to see it here</p>
         </div>
       ) : (
-        <div className="px-4 py-4 space-y-6">
-          {groups.map(({ date, entries: dayEntries }) => {
+        <div className="px-4 py-4 space-y-6">          {groups.map(({ date, entries: dayEntries }) => {
             const totals = dayTotals(dayEntries);
             const calPct = pct(totals.calories, goals.calories);
             const barColor = calPct > 100 ? '#E67E22' : '#2ECC71';

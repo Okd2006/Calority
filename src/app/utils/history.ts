@@ -27,7 +27,7 @@ async function getUserId(): Promise<string | null> {
 
 export async function getHistory(): Promise<HistoryEntry[]> {
   const userId = await getUserId();
-  if (!userId) return getCache();
+  if (!userId) return getCache(); // guest — use localStorage only
 
   const { data, error } = await supabase
     .from('meals')
@@ -49,6 +49,8 @@ export async function getHistory(): Promise<HistoryEntry[]> {
     savedAt: row.saved_at,
   }));
 
+  // Always overwrite cache with server data for logged-in users
+  // so stale data from a previous user never leaks through
   setCache(entries);
   return entries;
 }
@@ -90,7 +92,12 @@ export async function saveMeal(entry: Omit<HistoryEntry, 'id' | 'savedAt'>): Pro
 }
 
 export async function deleteMeal(id: string) {
-  await supabase.from('meals').delete().eq('id', id);
+  const userId = await getUserId();
+  if (userId) {
+    // For logged-in users, delete from Supabase by row id
+    await supabase.from('meals').delete().eq('id', id).eq('user_id', userId);
+  }
+  // Always update local cache
   setCache(getCache().filter(e => e.id !== id));
 }
 

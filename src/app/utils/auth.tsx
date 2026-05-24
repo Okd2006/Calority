@@ -57,8 +57,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    const wasGuest = localStorage.getItem(GUEST_KEY) === 'true';
     localStorage.removeItem(GUEST_KEY);
     setIsGuest(false);
+
+    // Clear localStorage data for guest users on logout
+    if (wasGuest) {
+      localStorage.removeItem('calority_history');
+      localStorage.removeItem('calority_goals');
+      localStorage.removeItem('calority_profile');
+    } else {
+      // For real users: clear the cache so next user doesn't see stale data
+      localStorage.removeItem('calority_history');
+      localStorage.removeItem('calority_goals');
+    }
+
     await supabase.auth.signOut();
   };
 
